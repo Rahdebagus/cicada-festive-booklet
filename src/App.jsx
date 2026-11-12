@@ -190,7 +190,7 @@ export default function App() {
               <span className="line-mask"><m.span variants={lineUp} custom={0.15}>A season of</m.span></span>{' '}
               <span className="line-mask"><m.em variants={lineUp} custom={0.27}>wonder.</m.em></span>
             </h1>
-            <m.p variants={rise} custom={0.4}>Where the spirit of Bali meets the magic of the festive season.</m.p>
+            <m.p variants={rise} custom={0.4}>A Festive Season inspired by the timeless joy of Balinese childhood.</m.p>
           </m.section>
 
           <section className="reading-area" aria-label="Interactive festive booklet">

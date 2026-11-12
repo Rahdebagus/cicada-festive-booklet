@@ -22,7 +22,7 @@ Open the URL printed by Vite (typically `http://localhost:5173`).
 3. Build command: `npm run build`. Output directory: `dist`.
 4. Deploy. This is a static site and requires no backend or API keys.
 
-`vercel.json` sets long-lived caching for hashed build assets and a 7-day cache for page images, brand assets and audio. If you replace an image but keep its file name, returning visitors may see the old one for up to a week; give the new file a new name to update it immediately.
+`vercel.json` sets long-lived caching for hashed build assets and a 7-day cache for page images, brand assets and audio. Page images keep their file names, so `PAGES_VERSION` in `src/data.js` is added to their URLs: bump it whenever the artwork changes and returning visitors fetch the new pages immediately.
 
 Alternatively, run `npm run build` and deploy the `dist` folder to any static host.
 
@@ -39,7 +39,13 @@ Alternatively, run `npm run build` and deploy the `dist` folder to any static ho
 - `public/audio/festive-ambient.mp3` — original ambient instrumental created for this project.
 - `scripts/compose_soundtrack.py` — optional deterministic music-generation script.
 
-To change the artwork, replace or add files in `source-images/`, update the list in `scripts/optimize_images.py` and `src/data.js`, then run `python scripts/optimize_images.py` (requires Pillow) to regenerate `public/pages/` and `public/brand/`.
+To update the booklet from a new PDF (same layout: square cover, two-page spreads, square back cover):
+
+```bash
+python scripts/optimize_images.py "path/to/Booklet.pdf"   # requires Pillow and PyMuPDF
+```
+
+This renders the pages into `source-images/`, regenerates `public/pages/` and `public/brand/`, and copies the PDF to `public/Festive_2026_Cicada_Ubud.pdf` for the download button. Then bump `PAGES_VERSION` in `src/data.js` and the matching `?v=` in `index.html`, update chapter titles in `src/data.js` if they changed, and commit. Running the script without a PDF just re-optimises whatever is in `source-images/`.
 
 To use a different licensed soundtrack, replace `public/audio/festive-ambient.mp3` with an audio file of the same name. Music begins only after a visitor taps **Open the Book** or enables sound, in keeping with browser autoplay restrictions.
 

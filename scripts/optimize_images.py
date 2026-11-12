@@ -6,8 +6,15 @@ Reads the original artwork from ``source-images/`` and writes:
   public/pages/<name>-1650.webp  full-resolution zoom view
   public/brand/*                 logo crops, favicons
 
-Usage:  python scripts/optimize_images.py   (requires Pillow)
+Usage:
+  python scripts/optimize_images.py                       re-optimise source-images/ (requires Pillow)
+  python scripts/optimize_images.py "path/to/booklet.pdf"  render a new booklet PDF first (also requires PyMuPDF):
+      square pages become festive-<n>.jpg, two-page spreads are split into festive-<n>-0.jpg / -1.jpg,
+      and the PDF is copied to public/ as the visitor download.
+After changing the artwork, bump PAGES_VERSION in src/data.js and the ?v= in index.html.
 """
+import shutil
+import sys
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFilter
@@ -17,6 +24,8 @@ SOURCE = ROOT / 'source-images'
 PAGES_OUT = ROOT / 'public' / 'pages'
 BRAND_OUT = ROOT / 'public' / 'brand'
 PUBLIC = ROOT / 'public'
+DOWNLOAD_PDF = PUBLIC / 'Festive_2026_Cicada_Ubud.pdf'
+PAGE_SIDE = 1650
 
 PAGES = ['festive-1', 'festive-2-0', 'festive-2-1', 'festive-3-0', 'festive-3-1',
          'festive-4-0', 'festive-4-1', 'festive-5-0', 'festive-5-1', 'festive-6']
@@ -29,6 +38,23 @@ BRAND_GREEN = (21, 35, 28, 255)
 
 def save_webp(image, path, quality):
     image.save(path, 'WEBP', quality=quality, method=6)
+
+
+def render_pdf(pdf_path):
+    import fitz  # PyMuPDF, only needed for this step
+
+    document = fitz.open(pdf_path)
+    for number, page in enumerate(document, start=1):
+        zoom = PAGE_SIDE / page.rect.height
+        pixmap = page.get_pixmap(matrix=fitz.Matrix(zoom, zoom), alpha=False, colorspace=fitz.csRGB)
+        image = Image.frombytes('RGB', (pixmap.width, pixmap.height), pixmap.samples)
+        if image.width <= PAGE_SIDE:
+            image.save(SOURCE / f'festive-{number}.jpg', quality=95, subsampling=0)
+            continue
+        for half in (0, 1):
+            leaf = image.crop((half * image.width // 2, 0, (half + 1) * image.width // 2, image.height))
+            leaf.save(SOURCE / f'festive-{number}-{half}.jpg', quality=95, subsampling=0)
+    shutil.copyfile(pdf_path, DOWNLOAD_PDF)
 
 
 def build_pages():
@@ -82,6 +108,8 @@ def build_brand():
 
 
 if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        render_pdf(sys.argv[1])
     build_pages()
     build_brand()
     for folder in (PAGES_OUT, BRAND_OUT):
